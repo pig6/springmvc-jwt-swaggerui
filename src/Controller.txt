@@ -1,0 +1,22 @@
+@Api(value="登录接口")
+@Controller
+@RequestMapping("/api/v1")
+public class LoginInterface extends BaseController {
+
+	@Autowired
+	UserSO so;
+	
+	@ApiOperation(value="验证密文，并添加user", notes="密文和amigoInfo")
+	@RequestMapping( value = {"/login"}, method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+	@ResponseBody
+	public String login(HttpServletRequest request, @RequestParam String fields, @PathVariable String useruid) {
+		// do something
+	}
+	
+	/*
+	*api开头的注解都是swagger的注解
+	*方法参数上加有@RequestParam的参数会显示在swagger
+	*所以上述login方法的三个参数只有fields会显示在swagger中
+	*当然还有一个请求头的参数，存放token的那是在SaggerConfig.java中配置的
+	*/
+}

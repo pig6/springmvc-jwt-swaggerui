@@ -1,0 +1,67 @@
+public abstract class BaseWebInterceptor extends HandlerInterceptorAdapter {
+
+	public static final String RedirectPrefix = "redirect:";
+	private static Logger log = LoggerFactory.getLogger(BaseWebInterceptor.class);
+
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+		if (isNeedJwtUrl(request.getRequestURI())) {	//判断这个url是否需要jwt验证 ，比如login就不需要
+			String token = request.getHeader("x-access-token");		//从request中获取token，key是自定义的，当然app端存也要是这个key
+			ETokenState state = JwtUtil.validateJWT(token);			//验证token，ETokenState这是我自定义的一个类，JwtUtil这也是自己写的一个类
+			switch (state) {		
+			case invalid:		//验证错误
+				log.info(String.format("URL:%s need login, but the token is null or invalid... ", request.getRequestURL().toString()));
+				response.setStatus(401);
+				return false;
+			case expired:		//token过期
+				if (refreshTokenHandler(request, response, token)) {
+					break;
+				} else {
+					log.info(String.format("URL:%s need login, but the token is expired... ", request.getRequestURL().toString()));
+					response.setStatus(403);
+					return false;
+				}
+			case valid:		//有效的
+				break;
+			default:
+				break;
+			}
+		}
+		return super.preHandle(request, response, handler);
+	}
+
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+		super.afterCompletion(request, response, handler, ex);
+	}
+
+	@Override
+	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+		super.postHandle(request, response, handler, modelAndView);
+	}
+
+
+	/**
+	 * 刷新token，子类重载
+	 * 
+	 * @author chenmc
+	 * @date 2017年5月9日 下午3:41:05
+	 * @param token
+	 * @return
+	 */
+	protected boolean refreshTokenHandler(HttpServletRequest request, HttpServletResponse response, String token) {
+		return false;
+	}
+
+
+	/**
+	 * 需要登录的uri
+	 * 
+	 * @param requestURI
+	 * @return
+	 */
+	private boolean isNeedJwtUrl(String requestURI) {
+		return MappingConf.isNeedJwtUrls(requestURI);
+	}
+
+}
